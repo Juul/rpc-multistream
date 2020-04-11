@@ -1,6 +1,6 @@
 {
   "name": "rpc-multistream",
-  "version": "0.9.7",
+  "version": "1.0.0",
   "description": "Simple RPC with streams support",
   "homepage": "http://github.com/biobricks/rpc-multistream",
   "repository": {
