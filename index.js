@@ -217,6 +217,17 @@ function rpcMultiStream(methods, opts) {
     return count;
   }
 
+  // offset argument indices by i
+  function offsetArgs(args, i) {
+    var key, val;
+    for(key in args) {
+      val = args[key];
+      delete args[key];
+      key = parseInt(key)+i;
+      args[key] = val;
+    }
+  }
+  
   function restoreCallbackArgs(args, cbArgs) {
     var i;
     for(i in cbArgs) {
@@ -308,6 +319,17 @@ function rpcMultiStream(methods, opts) {
     var retStreamDescs = data[4];
     var retStreams;
 
+    if(!cbi) { // if not a callback
+      // prepend static input args, if any
+      if(opts.staticInArgs) {
+        args = opts.staticInArgs.concat(args);
+        // Indices of callback and stream args will now be wrong
+        // so we offset them to correct
+        offsetArgs(cbArgs, opts.staticInArgs.length);
+        offsetArgs(streamArgs, opts.staticInArgs.length);
+      }
+    }
+    
     function handleError(err) {
       // if last argument is a function then assume it's the main callback
       // and call it with the error as only argument
@@ -356,7 +378,8 @@ function rpcMultiStream(methods, opts) {
         }
         retStreams = restoreRetStreams(retStreamDescs);
       }
-
+      
+      // Call RPC function
       var ret = fn.apply(methods, args);
       if(!(ret instanceof Array)) ret = [ret];
 
@@ -566,6 +589,13 @@ function rpcMultiStream(methods, opts) {
   function createRemoteCall(name, retStreamOpts) {
     return function() {
       var args = [].slice.call(arguments);
+      
+      if(!parseInt(name)) { // if this is not a callback
+        // prepend static arguments if they are set
+        if(opts.staticOutArgs) {
+          args = opts.staticOutArgs.concat(args);
+        }
+      }
       var cbMapping = registerCallbacks(args);
       var streamMapping = registerStreams(args);
       var returnMapping = null;
@@ -577,6 +607,7 @@ function rpcMultiStream(methods, opts) {
           args[0] = opts.flattenError(args[0]);
         }
       }
+    
       msg.push(args);
       if(cbMapping) msg.push(cbMapping);
       if(streamMapping) {
@@ -699,6 +730,19 @@ function rpcMultiStream(methods, opts) {
   multiplex.playDead = function(state) {
     playingDead = (state === undefined) ? true : false;
   };
+
+  multiplex.setStaticInArgs = function() {
+    if(!arguments.length) return;
+    
+    opts.staticInArgs = Array.prototype.slice.call(arguments);
+  }
+  
+  multiplex.setStaticOutArgs = function() {
+    if(!arguments.length) return;
+    
+    opts.staticOutArgs = Array.prototype.slice.call(arguments);
+  }
+  
   
   return multiplex;
 }

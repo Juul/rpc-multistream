@@ -9,7 +9,7 @@ rpc-multistream is similar to [rpc-stream](https://github.com/dominictarr/rpc-st
 
 rpc-multistream uses streams2 and [multiplex](https://github.com/maxogden/multiplex) under the hood, so is efficient for binary streams.
 
-If you need authentication then check out [rpc-multiauth](https://github.com/biobricks/rpc-multiauth).
+If you need authentication then check out [rpc-multiauth](https://github.com/biobricks/rpc-multiauth) which was written to work well with this library.
 
 # Usage 
 
@@ -49,7 +49,7 @@ client.on('methods', function(remote) {
 These are are the defaults:
 
 ```javascript
-rpc({ ...methods... }, { 
+rpc({ ...methods... }, {
 
   init: true, // automatically send rpc methods manifest on instantiation
   encoding: 'utf8', // default encoding for streams
@@ -61,7 +61,7 @@ rpc({ ...methods... }, {
   flattenError: <function_or_false>, // function for serializing errors, or false
   expandError: <function>, // function for deserializing errors, or false
   onError: <function> // function to run on orphaned errors, or false
-}
+})
 ```
 
 If you set init to false then the list of functions will not be sent and the remote end will not emit a 'methods' event until you call rpc.init().
@@ -110,6 +110,54 @@ var endpoint = rpc({ ... some methods ... }, {
   }
 });
 ```
+
+# Static arguments
+
+## .setStaticInArgs()
+
+You can use `.setStaticInArgs()` to set one or more static arguments which will then be prepended to every incoming RPC call, e.g:
+
+```javascript
+
+var myRPC = rpc({
+  test: function(myStaticArg, arg) {
+    console.log(myStaticArg, arg)
+  }
+});
+
+myRPC.setStaticInArgs('foo');
+```
+
+Now calling `remote.test('bar')` from the other endpoint will result in the output `foo bar`.
+
+`.setStaticInArgs` is useful for saving connection-specific information in a way that makes it easily accessible to the RPC functions. E.g. one could set `stream.socket.remoteAddress` as a static input argument so RPC functions will always know which IP is making the call.
+
+
+## .setStaticOutArgs()
+
+You can use `.setStaticOutArgs()` to set one or more static arguments which will then be prepended to every outgoing RPC call, e.g:
+
+```javascript
+
+var server = rpc({
+  test: function(myStaticArg, arg) {
+    console.log(myStaticArg, arg)
+  }
+});
+
+var client = rpc();
+       
+client.setStaticOutArgs('foo');
+  
+client.pipe(server).pipe(client);
+  
+client.on('methods', function(methods) {    
+  methods.test('bar');
+});
+```
+
+The server will then output `foo bar`.
+
 
 # Bi-directional RPC
 
@@ -205,9 +253,9 @@ If using synchronous calls then both RPC server and client cannot be in the same
 
 # Copyright and license
 
-Copyright 2014, 2015 Marc Juul <npm@juul.io>
+* Copyright 2020 renegade.bio
+* Copyright 2016-2017 BioBrick Foundation
+* Copyright 2014-2015 Marc Juul <npm@juul.io>
 
-Copyright 2016, 2017 BioBrick Foundation
-
-License: AGPLv3
+* License: AGPLv3 (full license text in `LICENSE` file)
 
