@@ -236,6 +236,7 @@ If using synchronous calls then both RPC server and client cannot be in the same
 
 # ToDo
 
+* Add a way to bind arbitrary data accessible as .this from inside RPC functions
 * Implement opts.detectEncoding and opts.detectStreamType
 * Automatically close irrelevant ends of read/write streams
 * Use pump everywhere instead of .pipe
